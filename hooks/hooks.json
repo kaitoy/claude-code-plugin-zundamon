@@ -20,6 +20,17 @@
         ]
       }
     ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python ${CLAUDE_PLUGIN_ROOT}/notify.py permission_request"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

@@ -75,7 +75,7 @@ def main():
     )
     parser.add_argument(
         'hook_type',
-        choices=['permission_prompt', 'idle_prompt', 'stop'],
+        choices=['permission_prompt', 'idle_prompt', 'stop', 'permission_request'],
         help='Type of hook that triggered the notification'
     )
     parser.add_argument(
@@ -107,6 +107,11 @@ def main():
         'permission_prompt': {
             'title': 'Claude Code: Permission Required',
             'message': args.message or stdin_message or 'Claude is requesting permission to perform an action.',
+            'icon': icon_dir / 'zunmon_3015.ico'
+        },
+        'permission_request': {
+            'title': 'Claude Code: Permission Requested',
+            'message': args.message or stdin_message or 'Claude is requesting permission to use a tool.',
             'icon': icon_dir / 'zunmon_3015.ico'
         },
         'idle_prompt': {
