@@ -79,6 +79,7 @@ def send_notification(title, message, timeout=60, icon_path=None):
                 window.bind('<Button-1>', close_window)
                 canvas.bind('<Button-1>', close_window)
                 text_widget.bind('<Button-1>', close_window)
+                window.bind('<Escape>', close_window)
 
                 # Position window at bottom-right of screen
                 screen_width = window.winfo_screenwidth()
