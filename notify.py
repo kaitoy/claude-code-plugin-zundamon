@@ -171,21 +171,20 @@ def main():
         '--timeout',
         type=int,
         default=60,
-        help='Notification timeout in seconds (default: 10)'
+        help='Notification timeout in seconds (default: 60)'
     )
     parser.add_argument(
         '--message',
         type=str,
         help='Custom notification message (overrides stdin message)'
     )
+    parser.add_argument(
+        '--background',
+        action='store_true',
+        help=argparse.SUPPRESS
+    )
 
     args = parser.parse_args()
-
-    # Read hook input from stdin
-    hook_input = read_hook_input()
-
-    # Extract message from hook input if available
-    stdin_message = hook_input.get('message', '')
 
     # Get the script directory and icon/sound paths
     script_dir = Path(__file__).parent
@@ -196,25 +195,25 @@ def main():
     notifications_config = {
         'permission_prompt': {
             'title': 'Claude Code: Permission Required',
-            'message': args.message or stdin_message or 'Claude is requesting permission to perform an action.',
+            'default_message': 'Claude is requesting permission to perform an action.',
             'icon': icon_dir / 'zunmon_3015_small.png',
             'sound': sound_dir / 'ask.wav'
         },
         'permission_request': {
             'title': 'Claude Code: Permission Requested',
-            'message': args.message or stdin_message or 'Claude is requesting permission to use a tool.',
+            'default_message': 'Claude is requesting permission to use a tool.',
             'icon': icon_dir / 'zunmon_3015_small.png',
             'sound': sound_dir / 'ask.wav'
         },
         'idle_prompt': {
             'title': 'Claude Code: Waiting for Input',
-            'message': args.message or stdin_message or 'Claude is idle and waiting for your response.',
+            'default_message': 'Claude is idle and waiting for your response.',
             'icon': icon_dir / 'zunmon_3016_small.png',
             'sound': sound_dir / 'waiting.wav'
         },
         'stop': {
             'title': 'Claude Code: Stopped',
-            'message': args.message or stdin_message or 'Claude has stopped execution.',
+            'default_message': 'Claude has stopped execution.',
             'icon': icon_dir / 'zunmon_3001_small.png',
             'sound': sound_dir / 'done.wav'
         }
@@ -225,9 +224,36 @@ def main():
         print(f"Unknown hook type: {args.hook_type}", file=sys.stderr)
         return 1
 
+    if not args.background:
+        # Launcher mode: read stdin, resolve message, spawn detached worker
+        hook_input = read_hook_input()
+        message = args.message or hook_input.get('message', '') or config['default_message']
+
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            args.hook_type,
+            '--message', message,
+            '--timeout', str(args.timeout),
+            '--background',
+        ]
+        kwargs = {
+            'stdin': subprocess.DEVNULL,
+            'stdout': subprocess.DEVNULL,
+            'stderr': subprocess.DEVNULL,
+        }
+        if sys.platform == 'win32':
+            kwargs['creationflags'] = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            kwargs['start_new_session'] = True
+
+        subprocess.Popen(cmd, **kwargs)
+        return 0
+
+    # Worker mode: display notification
     return send_notification(
         title=config['title'],
-        message=config['message'],
+        message=args.message or config['default_message'],
         timeout=args.timeout,
         icon_path=config.get('icon'),
         sound_path=config.get('sound')
