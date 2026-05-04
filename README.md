@@ -8,12 +8,14 @@
 
 語尾が「なのだ」になります。
 
-また、Pythonの標準ライブラリtkinterを使用して、ずんだもんのスプライトを画面に表示する通知を実現します。各通知には専用のずんだもん画像が表示されます。
+また、Pythonの標準ライブラリtkinterを使用して、ずんだもんのスプライトを画面に表示する通知を実現します。各通知には専用のずんだもん画像と音声が同時に再生されます。
 
-- **permission_prompt**: Claudeが権限を要求する際に通知（画像: zunmon_3015_small.png）
-- **permission_request**: Claudeがツールの使用権限を要求する際に通知（画像: zunmon_3015_small.png）
-- **idle_prompt**: Claudeがアイドル状態で入力待ちの際に通知（画像: zunmon_3016_small.png）
-- **stop**: Claudeが停止した際に通知（画像: zunmon_3001_small.png）
+| フックタイプ | 説明 | 画像 | 音声 |
+|---|---|---|---|
+| **permission_prompt** | Claudeが権限を要求する際に通知 | zunmon_3015_small.png | ask.wav |
+| **permission_request** | Claudeがツールの使用権限を要求する際に通知 | zunmon_3015_small.png | ask.wav |
+| **idle_prompt** | Claudeがアイドル状態で入力待ちの際に通知 | zunmon_3016_small.png | waiting.wav |
+| **stop** | Claudeが停止した際に通知 | zunmon_3001_small.png | done.wav |
 
 通知は画面右下に表示され、クリックまたは `b` キーを押して閉じることもできます。
 
@@ -28,6 +30,10 @@ zundamon/
 │   ├── zunmon_3001_small.png # stop用画像
 │   ├── zunmon_3015_small.png # permission_prompt/request用画像
 │   └── zunmon_3016_small.png # idle_prompt用画像
+├── sounds/                   # 通知音声ファイル
+│   ├── ask.wav               # permission_prompt/request用
+│   ├── done.wav              # stop用
+│   └── waiting.wav           # idle_prompt用
 ├── notify.py                 # 通知スクリプト
 └── README.md
 ```
@@ -35,7 +41,8 @@ zundamon/
 - **plugin.json**: プラグインのメタデータと設定
 - **hooks/hooks.json**: Notificationフックの定義（`${CLAUDE_PLUGIN_ROOT}`変数でプラグインルートを参照）
 - **images/**: 各フックタイプ用のずんだもんスプライト画像
-- **notify.py**: tkinterを使ったスプライト表示スクリプト
+- **sounds/**: 各フックタイプ用の通知音声（WAV形式）
+- **notify.py**: tkinterを使ったスプライト表示と音声再生スクリプト
 
 ## インストール
 
@@ -138,7 +145,21 @@ Claude CodeのHookから渡されるJSON形式:
 
 ### Windows特有の問題
 
-特になし。tkinterはPythonに標準で含まれています。
+特になし。tkinterはPythonに標準で含まれています。音声再生には`winsound`（Python標準ライブラリ）を使用するため、追加インストール不要です。
+
+### 音声が再生されない
+
+音声再生にはOS標準のツールを使用します。
+
+- **Windows**: `winsound`（Python標準ライブラリ）— 追加インストール不要
+- **macOS**: `afplay`（macOS標準）— 追加インストール不要
+- **Linux**: `aplay`（ALSAユーティリティ）— 未インストールの場合:
+  ```bash
+  # Ubuntu/Debianの場合
+  sudo apt-get install alsa-utils
+  ```
+
+音声ファイルが見つからない場合は警告を出して通知表示は続行します。
 
 ### macOS特有の問題
 

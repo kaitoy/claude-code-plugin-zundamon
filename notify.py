@@ -8,11 +8,32 @@ import sys
 import json
 import argparse
 import select
+import subprocess
+import threading
 from pathlib import Path
 import tkinter as tk
 
 
-def send_notification(title, message, timeout=60, icon_path=None):
+def play_sound(sound_path):
+    if not sound_path or not Path(sound_path).exists():
+        return
+
+    def _play():
+        try:
+            if sys.platform == 'win32':
+                import winsound
+                winsound.PlaySound(str(sound_path), winsound.SND_FILENAME)
+            elif sys.platform == 'darwin':
+                subprocess.run(['afplay', str(sound_path)], check=False)
+            else:
+                subprocess.run(['aplay', str(sound_path)], check=False)
+        except Exception as e:
+            print(f"Warning: Could not play sound: {e}", file=sys.stderr)
+
+    threading.Thread(target=_play, daemon=True).start()
+
+
+def send_notification(title, message, timeout=60, icon_path=None, sound_path=None):
     """
     Display a sprite notification using tkinter.
 
@@ -22,6 +43,8 @@ def send_notification(title, message, timeout=60, icon_path=None):
         timeout: Duration in seconds (default: 60)
         icon_path: Path to image file (optional)
     """
+    play_sound(sound_path)
+
     try:
         # Create window
         window = tk.Tk()
@@ -164,31 +187,36 @@ def main():
     # Extract message from hook input if available
     stdin_message = hook_input.get('message', '')
 
-    # Get the script directory and icon paths
+    # Get the script directory and icon/sound paths
     script_dir = Path(__file__).parent
     icon_dir = script_dir / 'images'
+    sound_dir = script_dir / 'sounds'
 
-    # Define default messages and images for each hook type
+    # Define default messages, images, and sounds for each hook type
     notifications_config = {
         'permission_prompt': {
             'title': 'Claude Code: Permission Required',
             'message': args.message or stdin_message or 'Claude is requesting permission to perform an action.',
-            'icon': icon_dir / 'zunmon_3015_small.png'
+            'icon': icon_dir / 'zunmon_3015_small.png',
+            'sound': sound_dir / 'ask.wav'
         },
         'permission_request': {
             'title': 'Claude Code: Permission Requested',
             'message': args.message or stdin_message or 'Claude is requesting permission to use a tool.',
-            'icon': icon_dir / 'zunmon_3015_small.png'
+            'icon': icon_dir / 'zunmon_3015_small.png',
+            'sound': sound_dir / 'ask.wav'
         },
         'idle_prompt': {
             'title': 'Claude Code: Waiting for Input',
             'message': args.message or stdin_message or 'Claude is idle and waiting for your response.',
-            'icon': icon_dir / 'zunmon_3016_small.png'
+            'icon': icon_dir / 'zunmon_3016_small.png',
+            'sound': sound_dir / 'waiting.wav'
         },
         'stop': {
             'title': 'Claude Code: Stopped',
             'message': args.message or stdin_message or 'Claude has stopped execution.',
-            'icon': icon_dir / 'zunmon_3001_small.png'
+            'icon': icon_dir / 'zunmon_3001_small.png',
+            'sound': sound_dir / 'done.wav'
         }
     }
 
@@ -201,7 +229,8 @@ def main():
         title=config['title'],
         message=config['message'],
         timeout=args.timeout,
-        icon_path=config.get('icon')
+        icon_path=config.get('icon'),
+        sound_path=config.get('sound')
     )
 
 
