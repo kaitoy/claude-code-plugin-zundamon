@@ -198,7 +198,7 @@ def main():
             'title': 'Claude Code: Permission Required',
             'default_message': 'Claude is requesting permission to perform an action.',
             'icon': icon_dir / 'zunmon_3015_small.png',
-            'sound': random.choice([sound_dir / 'ask.wav', sound_dir / 'oi.wav'])
+            'sound': random.choice([sound_dir / 'ask.wav', sound_dir / 'oi.wav', sound_dir / 'decision.wav', sound_dir / 'ask2.wav', sound_dir / 'ask3.wav'])
         },
         'permission_request': {
             'title': 'Claude Code: Permission Requested',

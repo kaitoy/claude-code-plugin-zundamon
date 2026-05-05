@@ -12,7 +12,7 @@
 
 | フックタイプ | 説明 | 画像 | 音声 |
 |---|---|---|---|
-| **permission_prompt** | Claudeが権限を要求する際に通知 | zunmon_3015_small.png | ask.wav / oi.wav（ランダム） |
+| **permission_prompt** | Claudeが権限を要求する際に通知 | zunmon_3015_small.png | ask.wav / oi.wav / decision.wav / ask2.wav / ask3.wav（ランダム） |
 | **idle_prompt** | Claudeがアイドル状態で入力待ちの際に通知 | zunmon_3016_small.png | waiting.wav |
 | **stop** | Claudeが停止した際に通知 | zunmon_3001_small.png | done.wav / perfect.wav（ランダム） |
 
@@ -31,6 +31,9 @@ zundamon/
 │   └── zunmon_3016_small.png # idle_prompt用画像
 ├── sounds/                   # 通知音声ファイル
 │   ├── ask.wav               # permission_prompt用（ランダム）
+│   ├── ask2.wav              # permission_prompt用（ランダム）
+│   ├── ask3.wav              # permission_prompt用（ランダム）
+│   ├── decision.wav          # permission_prompt用（ランダム）
 │   ├── oi.wav                # permission_prompt用（ランダム）
 │   ├── done.wav              # stop用（ランダム）
 │   ├── perfect.wav           # stop用（ランダム）
