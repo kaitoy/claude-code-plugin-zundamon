@@ -7,6 +7,7 @@ Displays sprite notifications using tkinter.
 import sys
 import json
 import argparse
+import random
 import select
 import subprocess
 import threading
@@ -197,7 +198,7 @@ def main():
             'title': 'Claude Code: Permission Required',
             'default_message': 'Claude is requesting permission to perform an action.',
             'icon': icon_dir / 'zunmon_3015_small.png',
-            'sound': sound_dir / 'ask.wav'
+            'sound': random.choice([sound_dir / 'ask.wav', sound_dir / 'oi.wav'])
         },
         'permission_request': {
             'title': 'Claude Code: Permission Requested',
@@ -215,7 +216,7 @@ def main():
             'title': 'Claude Code: Stopped',
             'default_message': 'Claude has stopped execution.',
             'icon': icon_dir / 'zunmon_3001_small.png',
-            'sound': sound_dir / 'done.wav'
+            'sound': random.choice([sound_dir / 'done.wav', sound_dir / 'perfect.wav'])
         }
     }
 

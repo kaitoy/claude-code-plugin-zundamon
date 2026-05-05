@@ -12,10 +12,9 @@
 
 | フックタイプ | 説明 | 画像 | 音声 |
 |---|---|---|---|
-| **permission_prompt** | Claudeが権限を要求する際に通知 | zunmon_3015_small.png | ask.wav |
-| **permission_request** | Claudeがツールの使用権限を要求する際に通知 | zunmon_3015_small.png | ask.wav |
+| **permission_prompt** | Claudeが権限を要求する際に通知 | zunmon_3015_small.png | ask.wav / oi.wav（ランダム） |
 | **idle_prompt** | Claudeがアイドル状態で入力待ちの際に通知 | zunmon_3016_small.png | waiting.wav |
-| **stop** | Claudeが停止した際に通知 | zunmon_3001_small.png | done.wav |
+| **stop** | Claudeが停止した際に通知 | zunmon_3001_small.png | done.wav / perfect.wav（ランダム） |
 
 通知は画面右下に表示され、クリックまたは `b` キーを押して閉じることもできます。
 
@@ -28,11 +27,13 @@ zundamon/
 │   └── hooks.json            # hooks設定
 ├── images/                   # ずんだもんスプライト画像
 │   ├── zunmon_3001_small.png # stop用画像
-│   ├── zunmon_3015_small.png # permission_prompt/request用画像
+│   ├── zunmon_3015_small.png # permission_prompt用画像
 │   └── zunmon_3016_small.png # idle_prompt用画像
 ├── sounds/                   # 通知音声ファイル
-│   ├── ask.wav               # permission_prompt/request用
-│   ├── done.wav              # stop用
+│   ├── ask.wav               # permission_prompt用（ランダム）
+│   ├── oi.wav                # permission_prompt用（ランダム）
+│   ├── done.wav              # stop用（ランダム）
+│   ├── perfect.wav           # stop用（ランダム）
 │   └── waiting.wav           # idle_prompt用
 ├── notify.py                 # 通知スクリプト
 └── README.md
@@ -113,7 +114,7 @@ Claude CodeのHookから渡されるJSON形式:
 
 ### オプション
 
-- `hook_type`: `permission_prompt`, `permission_request`, `idle_prompt`, または `stop`（必須）
+- `hook_type`: `permission_prompt`, `idle_prompt`, または `stop`（必須）
 - `--message`: カスタム通知メッセージ（stdinのmessageより優先、オプション）
 - `--timeout`: 通知の表示時間（秒、デフォルト: 10）
 
