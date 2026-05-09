@@ -1,6 +1,6 @@
 {
   "name": "zundamon",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "Vibe coding with Zundamon.",
   "author": {
     "name": "Kaito Yamada",
@@ -14,5 +14,19 @@
   ],
   "outputStyles":[
     "./styles/"
-  ]
+  ],
+  "userConfig": {
+    "notification_duration": {
+      "type": "number",
+      "title": "Notification Duration (seconds)",
+      "description": "Duration in seconds to display the notification image",
+      "default": 60
+    },
+    "voice_enabled": {
+      "type": "boolean",
+      "title": "Voice Playback",
+      "description": "Whether to play audio on notification",
+      "default": true
+    }
+  }
 }

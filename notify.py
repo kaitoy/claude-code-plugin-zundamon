@@ -4,6 +4,7 @@ Claude Code Notification Script
 Displays sprite notifications using tkinter.
 """
 
+import os
 import sys
 import json
 import argparse
@@ -13,6 +14,13 @@ import subprocess
 import threading
 from pathlib import Path
 import tkinter as tk
+
+
+def load_plugin_config():
+    duration = int(os.environ.get('CLAUDE_PLUGIN_OPTION_NOTIFICATION_DURATION', 60))
+    voice_raw = os.environ.get('CLAUDE_PLUGIN_OPTION_VOICE_ENABLED', 'true')
+    voice_enabled = voice_raw.lower() not in ('false', '0', '')
+    return {'notification_duration': duration, 'voice_enabled': voice_enabled}
 
 
 def play_sound(sound_path):
@@ -168,11 +176,13 @@ def main():
         choices=['permission_prompt', 'idle_prompt', 'stop', 'permission_request'],
         help='Type of hook that triggered the notification'
     )
+    plugin_config = load_plugin_config()
+
     parser.add_argument(
         '--timeout',
         type=int,
-        default=60,
-        help='Notification timeout in seconds (default: 60)'
+        default=plugin_config['notification_duration'],
+        help=f"Notification timeout in seconds (default: {plugin_config['notification_duration']})"
     )
     parser.add_argument(
         '--message',
@@ -187,7 +197,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Get the script directory and icon/sound paths
     script_dir = Path(__file__).parent
     icon_dir = script_dir / 'images'
     sound_dir = script_dir / 'sounds'
@@ -220,15 +229,15 @@ def main():
         }
     }
 
-    config = notifications_config.get(args.hook_type)
-    if not config:
+    notif_config = notifications_config.get(args.hook_type)
+    if not notif_config:
         print(f"Unknown hook type: {args.hook_type}", file=sys.stderr)
         return 1
 
     if not args.background:
         # Launcher mode: read stdin, resolve message, spawn detached worker
         hook_input = read_hook_input()
-        message = args.message or hook_input.get('message', '') or config['default_message']
+        message = args.message or hook_input.get('message', '') or notif_config['default_message']
 
         cmd = [
             sys.executable,
@@ -252,12 +261,13 @@ def main():
         return 0
 
     # Worker mode: display notification
+    sound_path = notif_config.get('sound') if plugin_config['voice_enabled'] else None
     return send_notification(
-        title=config['title'],
-        message=args.message or config['default_message'],
+        title=notif_config['title'],
+        message=args.message or notif_config['default_message'],
         timeout=args.timeout,
-        icon_path=config.get('icon'),
-        sound_path=config.get('sound')
+        icon_path=notif_config.get('icon'),
+        sound_path=sound_path
     )
 
 

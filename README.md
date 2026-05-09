@@ -42,11 +42,20 @@ zundamon/
 └── README.md
 ```
 
-- **plugin.json**: プラグインのメタデータと設定
+- **plugin.json**: プラグインのメタデータと設定（`userConfig`でユーザー設定を定義）
 - **hooks/hooks.json**: Notificationフックの定義（`${CLAUDE_PLUGIN_ROOT}`変数でプラグインルートを参照）
 - **images/**: 各フックタイプ用のずんだもんスプライト画像
 - **sounds/**: 各フックタイプ用の通知音声（WAV形式）
 - **notify.py**: tkinterを使ったスプライト表示と音声再生スクリプト
+
+## 設定
+
+プラグインを有効化する際にClaude Codeが設定値を入力するよう促します。設定後は `claude plugin config zundamon` で変更できます。
+
+| 設定キー | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `notification_duration` | 数値（秒） | `60` | 通知画像の表示時間（秒） |
+| `voice_enabled` | bool | `true` | 通知時に音声を再生するかどうか |
 
 ## インストール
 
