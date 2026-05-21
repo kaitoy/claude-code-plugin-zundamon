@@ -74,43 +74,44 @@ def send_notification(title, message, timeout=60, icon_path=None, sound_path=Non
                 canvas.create_image(0, 0, image=img, anchor=tk.NW)
                 canvas.place(x=-2, y=-2)
 
-                # Create text widget for message
-                text_widget = tk.Text(
-                    canvas,
-                    font=("Meiryo UI", 15),
-                    spacing2=-2,
-                    wrap='word',
-                    bg="white",
-                    fg="#333333",
-                    width=17,
-                    height=3,
-                    borderwidth=2,
-                    relief='solid',
-                    highlightthickness=2,
-                    highlightbackground="green",
-                    highlightcolor='green',
-                    padx=5,
-                    pady=5
-                )
-                text_widget.tag_configure("center", justify='center')
-                text_widget.insert(1.0, message, 'center')
-                text_widget.config(state='disabled')
-                canvas.create_window(
-                    img_width / 2,
-                    img_height - 100,
-                    window=text_widget,
-                    anchor=tk.S,
-                    width=img_width - 4,
-                )
-
                 # Bind left click to close window
                 def close_window(event=None):
                     window.destroy()
                     window.quit()
 
+                if message:
+                    # Create text widget for message
+                    text_widget = tk.Text(
+                        canvas,
+                        font=("Meiryo UI", 15),
+                        spacing2=-2,
+                        wrap='word',
+                        bg="white",
+                        fg="#333333",
+                        width=17,
+                        height=3,
+                        borderwidth=2,
+                        relief='solid',
+                        highlightthickness=2,
+                        highlightbackground="green",
+                        highlightcolor='green',
+                        padx=5,
+                        pady=5
+                    )
+                    text_widget.tag_configure("center", justify='center')
+                    text_widget.insert(1.0, message, 'center')
+                    text_widget.config(state='disabled')
+                    canvas.create_window(
+                        img_width / 2,
+                        img_height - 100,
+                        window=text_widget,
+                        anchor=tk.S,
+                        width=img_width - 4,
+                    )
+                    text_widget.bind('<Button-1>', close_window)
+
                 window.bind('<Button-1>', close_window)
                 canvas.bind('<Button-1>', close_window)
-                text_widget.bind('<Button-1>', close_window)
                 window.bind('<b>', close_window)
 
                 # Position window at bottom-right of screen
@@ -218,12 +219,14 @@ def main():
         'idle_prompt': {
             'title': 'Claude Code: Waiting for Input',
             'default_message': 'Claude is idle and waiting for your response.',
+            'show_message': False,
             'icon': icon_dir / 'zunmon_3016_small.png',
             'sound': sound_dir / 'waiting.wav'
         },
         'stop': {
             'title': 'Claude Code: Stopped',
             'default_message': 'Claude has stopped execution.',
+            'show_message': False,
             'icon': icon_dir / 'zunmon_3001_small.png',
             'sound': random.choice([sound_dir / 'done.wav', sound_dir / 'perfect.wav'])
         }
@@ -262,9 +265,11 @@ def main():
 
     # Worker mode: display notification
     sound_path = notif_config.get('sound') if plugin_config['voice_enabled'] else None
+    show_message = notif_config.get('show_message', True)
+    message = (args.message or notif_config['default_message']) if show_message else None
     return send_notification(
         title=notif_config['title'],
-        message=args.message or notif_config['default_message'],
+        message=message,
         timeout=args.timeout,
         icon_path=notif_config.get('icon'),
         sound_path=sound_path
