@@ -1,6 +1,6 @@
 {
   "name": "zundamon",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "Vibe coding with Zundamon.",
   "author": {
     "name": "Kaito Yamada",
@@ -26,6 +26,12 @@
       "type": "boolean",
       "title": "Voice Playback",
       "description": "Whether to play audio on notification",
+      "default": true
+    },
+    "suppress_stop_while_async_agents": {
+      "type": "boolean",
+      "title": "Suppress Stop Notification While Async Subagents Are Pending",
+      "description": "When enabled, the stop notification is skipped if asynchronously launched subagents have not yet reported completion.",
       "default": true
     }
   }

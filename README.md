@@ -18,6 +18,8 @@
 
 通知は画面右下に表示され、クリックまたは `b` キーを押して閉じることもできます。
 
+**stop通知の抑制について**: Claudeが非同期のサブエージェント（Agent toolでバックグラウンド起動されたタスクなど）の完了を待たずに一旦応答を返してターンを終えた場合、そのサブエージェントの完了が確認できるまでstop通知は表示されません。これはセッションのtranscriptファイルを解析して判定するベストエフォート機能で、詳細は[トラブルシューティング](#stop通知がサブエージェント実行中に表示されない鳴らない)を参照してください。
+
 ## プラグイン構造
 
 ```
@@ -56,6 +58,7 @@ zundamon/
 |---|---|---|---|
 | `notification_duration` | 数値（秒） | `60` | 通知画像の表示時間（秒） |
 | `voice_enabled` | bool | `true` | 通知時に音声を再生するかどうか |
+| `suppress_stop_while_async_agents` | bool | `true` | 非同期サブエージェントの完了待ち中はstop通知を抑制するかどうか |
 
 ## インストール
 
@@ -146,6 +149,16 @@ Claude CodeのHookから渡されるJSON形式:
    ```
 
 3. Pythonのパスが正しいか確認（`python`または`python3`）
+
+### stop通知がサブエージェント実行中に表示されない（鳴らない）
+
+これは意図した動作です。Claudeが非同期のサブエージェント（Agent toolでバックグラウンド起動されたタスクなど）の完了を待たずに一旦応答を返してターンを終えた場合、`stop`フックは発火しますが、そのサブエージェントの完了が確認できるまでnotify.pyは通知の表示をスキップします。
+
+この判定はhookに渡されるセッションのtranscriptファイル（JSONL）を解析し、Claude Codeの非公開・非文書化の内部データ形式（サブエージェント起動時の`toolUseResult`と、完了時に挿入される`<task-notification>`メッセージ）を突き合わせて行っています。そのため、Claude Codeのアップデートで内部形式が変わると判定が正しく機能しなくなる可能性があります。判定自体に失敗した場合（`transcript_path`が無い、ファイルが読めない等）は通知を表示する側にフォールバックします。
+
+- スキップされたかどうかはstderrの`Info: Skipping stop notification; async subagent(s) are still pending.`で確認できます。
+- 判定に失敗した場合はstderrに`Warning: Could not evaluate transcript for pending async agents: ...`が出ますが、通知自体は表示されます。
+- この機能自体を無効化したい場合は、`suppress_stop_while_async_agents`設定を`false`にしてください（`claude plugin config zundamon`）。
 
 ### 画像が表示されない
 

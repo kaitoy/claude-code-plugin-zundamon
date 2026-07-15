@@ -9,9 +9,11 @@ import sys
 import json
 import argparse
 import random
+import re
 import select
 import subprocess
 import threading
+import collections
 from pathlib import Path
 import tkinter as tk
 
@@ -20,7 +22,13 @@ def load_plugin_config():
     duration = int(os.environ.get('CLAUDE_PLUGIN_OPTION_NOTIFICATION_DURATION', 60))
     voice_raw = os.environ.get('CLAUDE_PLUGIN_OPTION_VOICE_ENABLED', 'true')
     voice_enabled = voice_raw.lower() not in ('false', '0', '')
-    return {'notification_duration': duration, 'voice_enabled': voice_enabled}
+    suppress_raw = os.environ.get('CLAUDE_PLUGIN_OPTION_SUPPRESS_STOP_WHILE_ASYNC_AGENTS', 'true')
+    suppress_pending_async = suppress_raw.lower() not in ('false', '0', '')
+    return {
+        'notification_duration': duration,
+        'voice_enabled': voice_enabled,
+        'suppress_pending_async': suppress_pending_async,
+    }
 
 
 def play_sound(sound_path):
@@ -168,6 +176,100 @@ def read_hook_input():
     return {}
 
 
+_TASK_NOTIFICATION_RE = re.compile(
+    r'<task-notification>.*?<task-id>\s*(.*?)\s*</task-id>',
+    re.DOTALL,
+)
+# Cap how many transcript lines we scan: keeps per-turn overhead bounded on
+# long sessions, and lets a stuck/crashed agent's launch record age out of
+# the window instead of suppressing the stop notification forever.
+_TRANSCRIPT_TAIL_LINES = 2000
+
+
+def _extract_launched_agent_id(entry):
+    """Return the agentId if this transcript line is an async subagent launch."""
+    tool_use_result = entry.get('toolUseResult')
+    if not isinstance(tool_use_result, dict):
+        return None
+    if tool_use_result.get('isAsync') is True and tool_use_result.get('status') == 'async_launched':
+        agent_id = tool_use_result.get('agentId')
+        if isinstance(agent_id, str) and agent_id:
+            return agent_id
+    return None
+
+
+def _extract_completed_agent_ids(entry):
+    """Return the set of task-ids reported as finished by <task-notification> messages."""
+    if entry.get('type') != 'user':
+        return set()
+    message = entry.get('message')
+    if not isinstance(message, dict):
+        return set()
+
+    content = message.get('content')
+    texts = []
+    if isinstance(content, str):
+        texts.append(content)
+    elif isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict) and block.get('type') == 'text':
+                text = block.get('text')
+                if isinstance(text, str):
+                    texts.append(text)
+
+    found = set()
+    for text in texts:
+        if '<task-notification>' not in text:
+            continue
+        for match in _TASK_NOTIFICATION_RE.finditer(text):
+            task_id = match.group(1)
+            if task_id:
+                found.add(task_id)
+    return found
+
+
+def has_pending_async_subagents(hook_input, tail_lines=_TRANSCRIPT_TAIL_LINES):
+    """
+    Best-effort check for async subagents (e.g. Agent tool forks) launched in
+    this transcript that have not yet reported completion via a
+    <task-notification> message. Relies on undocumented Claude Code internals,
+    so any failure to read/parse the transcript falls back to False (i.e. show
+    the notification as before) rather than suppressing it incorrectly.
+    """
+    transcript_path = hook_input.get('transcript_path')
+    if not transcript_path:
+        return False
+
+    try:
+        path = Path(transcript_path).expanduser()
+        with path.open('r', encoding='utf-8', errors='replace') as f:
+            lines = collections.deque(f, maxlen=tail_lines) if tail_lines else f
+
+            launched = set()
+            completed = set()
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+
+                agent_id = _extract_launched_agent_id(entry)
+                if agent_id:
+                    launched.add(agent_id)
+
+                completed |= _extract_completed_agent_ids(entry)
+
+        return bool(launched - completed)
+    except Exception as e:
+        print(f"Warning: Could not evaluate transcript for pending async agents: {e}", file=sys.stderr)
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Send desktop notifications for Claude Code hooks'
@@ -240,6 +342,13 @@ def main():
     if not args.background:
         # Launcher mode: read stdin, resolve message, spawn detached worker
         hook_input = read_hook_input()
+
+        if (args.hook_type == 'stop'
+                and plugin_config['suppress_pending_async']
+                and has_pending_async_subagents(hook_input)):
+            print("Info: Skipping stop notification; async subagent(s) are still pending.", file=sys.stderr)
+            return 0
+
         message = args.message or hook_input.get('message', '') or notif_config['default_message']
 
         cmd = [
