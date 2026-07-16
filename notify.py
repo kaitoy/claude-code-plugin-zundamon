@@ -297,6 +297,11 @@ def main():
         action='store_true',
         help=argparse.SUPPRESS
     )
+    parser.add_argument(
+        '--pending-async',
+        action='store_true',
+        help=argparse.SUPPRESS
+    )
 
     args = parser.parse_args()
 
@@ -343,9 +348,11 @@ def main():
         # Launcher mode: read stdin, resolve message, spawn detached worker
         hook_input = read_hook_input()
 
-        if (args.hook_type == 'stop'
-                and plugin_config['suppress_pending_async']
-                and has_pending_async_subagents(hook_input)):
+        pending_async = False
+        if args.hook_type in ('stop', 'idle_prompt'):
+            pending_async = has_pending_async_subagents(hook_input)
+
+        if args.hook_type == 'stop' and plugin_config['suppress_pending_async'] and pending_async:
             print("Info: Skipping stop notification; async subagent(s) are still pending.", file=sys.stderr)
             return 0
 
@@ -359,6 +366,9 @@ def main():
             '--timeout', str(args.timeout),
             '--background',
         ]
+        if args.hook_type == 'idle_prompt' and pending_async:
+            cmd.append('--pending-async')
+
         kwargs = {
             'stdin': subprocess.DEVNULL,
             'stdout': subprocess.DEVNULL,
@@ -374,13 +384,19 @@ def main():
 
     # Worker mode: display notification
     sound_path = notif_config.get('sound') if plugin_config['voice_enabled'] else None
+    icon_path = notif_config.get('icon')
+    if args.hook_type == 'idle_prompt' and args.pending_async:
+        icon_path = icon_dir / 'zunmon_waiting.png'
+        if plugin_config['voice_enabled']:
+            sound_path = sound_dir / 'waiting2.wav'
+
     show_message = notif_config.get('show_message', True)
     message = (args.message or notif_config['default_message']) if show_message else None
     return send_notification(
         title=notif_config['title'],
         message=message,
         timeout=args.timeout,
-        icon_path=notif_config.get('icon'),
+        icon_path=icon_path,
         sound_path=sound_path
     )
 
