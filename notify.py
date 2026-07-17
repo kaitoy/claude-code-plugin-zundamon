@@ -235,6 +235,11 @@ def has_pending_async_subagents(hook_input, tail_lines=_TRANSCRIPT_TAIL_LINES):
     <task-notification> message. Relies on undocumented Claude Code internals,
     so any failure to read/parse the transcript falls back to False (i.e. show
     the notification as before) rather than suppressing it incorrectly.
+
+    Agents launched while permissionMode was "plan" are dropped once the
+    transcript shows we've since left plan mode: they're an implementation
+    detail of Plan Mode's own research/design phase, and a straggler there
+    shouldn't keep suppressing notifications for unrelated work that follows.
     """
     transcript_path = hook_input.get('transcript_path')
     if not transcript_path:
@@ -245,8 +250,9 @@ def has_pending_async_subagents(hook_input, tail_lines=_TRANSCRIPT_TAIL_LINES):
         with path.open('r', encoding='utf-8', errors='replace') as f:
             lines = collections.deque(f, maxlen=tail_lines) if tail_lines else f
 
-            launched = set()
+            launched = {}  # agent_id -> permissionMode active at launch time
             completed = set()
+            current_mode = None
             for raw_line in lines:
                 line = raw_line.strip()
                 if not line:
@@ -258,13 +264,20 @@ def has_pending_async_subagents(hook_input, tail_lines=_TRANSCRIPT_TAIL_LINES):
                 if not isinstance(entry, dict):
                     continue
 
+                mode = entry.get('permissionMode')
+                if isinstance(mode, str) and mode:
+                    current_mode = mode
+
                 agent_id = _extract_launched_agent_id(entry)
                 if agent_id:
-                    launched.add(agent_id)
+                    launched[agent_id] = current_mode
 
                 completed |= _extract_completed_agent_ids(entry)
 
-        return bool(launched - completed)
+        pending_ids = set(launched) - completed
+        if current_mode != 'plan':
+            pending_ids = {aid for aid in pending_ids if launched[aid] != 'plan'}
+        return bool(pending_ids)
     except Exception as e:
         print(f"Warning: Could not evaluate transcript for pending async agents: {e}", file=sys.stderr)
         return False

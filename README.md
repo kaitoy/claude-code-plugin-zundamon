@@ -159,6 +159,7 @@ Claude CodeのHookから渡されるJSON形式:
 - スキップされたかどうかはstderrの`Info: Skipping stop notification; async subagent(s) are still pending.`で確認できます。
 - 判定に失敗した場合はstderrに`Warning: Could not evaluate transcript for pending async agents: ...`が出ますが、通知自体は表示されます。
 - この機能自体を無効化したい場合は、`suppress_stop_while_async_agents`設定を`false`にしてください（`claude plugin config zundamon`）。
+- Planモードで起動された調査・設計用のサブエージェント（Explore/Planエージェントなど）は、Planモードを抜けた後は完了未確認のままでも判定対象から除外されます。Planフェーズの内部処理として起動されたサブエージェントが、それ以降の無関係な作業の`stop`通知まで抑制し続けないようにするためです。
 
 ### 画像が表示されない
 
