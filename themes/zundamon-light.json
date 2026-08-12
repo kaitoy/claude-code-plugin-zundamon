@@ -1,0 +1,7 @@
+{
+  "name": "Zundamon Light",
+  "base": "light",
+  "overrides": {
+    "claude": "#3C8C2E"
+  }
+}

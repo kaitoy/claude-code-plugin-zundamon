@@ -18,6 +18,15 @@
 
 通知は画面右下に表示され、クリックまたは `b` キーを押して閉じることもできます。
 
+## テーマ
+
+`/theme` コマンドから、ずんだもんカラー（葉っぱの緑）をアクセントカラーにしたカラーテーマを選択できます。
+
+| テーマ名 | 用途 |
+|---|---|
+| Zundamon Dark | ダークターミナル向け |
+| Zundamon Light | ライトターミナル向け |
+
 **stop通知の抑制について**: Claudeが非同期のサブエージェント（Agent toolでバックグラウンド起動されたタスクなど）の完了を待たずに一旦応答を返してターンを終えた場合、そのサブエージェントの完了が確認できるまでstop通知は表示されません。これはセッションのtranscriptファイルを解析して判定するベストエフォート機能で、詳細は[トラブルシューティング](#stop通知がサブエージェント実行中に表示されない鳴らない)を参照してください。
 
 ## プラグイン構造
@@ -40,6 +49,9 @@ zundamon/
 │   ├── done.wav              # stop用（ランダム）
 │   ├── perfect.wav           # stop用（ランダム）
 │   └── waiting.wav           # idle_prompt用
+├── themes/                   # カラーテーマ定義
+│   ├── zundamon-dark.json    # Zundamon Dark（ダーク用）
+│   └── zundamon-light.json   # Zundamon Light（ライト用）
 ├── notify.py                 # 通知スクリプト
 └── README.md
 ```
@@ -48,6 +60,7 @@ zundamon/
 - **hooks/hooks.json**: Notificationフックの定義（`${CLAUDE_PLUGIN_ROOT}`変数でプラグインルートを参照）
 - **images/**: 各フックタイプ用のずんだもんスプライト画像
 - **sounds/**: 各フックタイプ用の通知音声（WAV形式）
+- **themes/**: `/theme` から選べるカラーテーマ定義（JSON）
 - **notify.py**: tkinterを使ったスプライト表示と音声再生スクリプト
 
 ## 設定

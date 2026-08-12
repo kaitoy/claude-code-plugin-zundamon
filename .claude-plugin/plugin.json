@@ -1,6 +1,6 @@
 {
   "name": "zundamon",
-  "version": "2.9.2",
+  "version": "2.10.0",
   "description": "Vibe coding with Zundamon.",
   "author": {
     "name": "Kaito Yamada",
@@ -15,6 +15,9 @@
   "outputStyles":[
     "./styles/"
   ],
+  "experimental": {
+    "themes": "./themes/"
+  },
   "userConfig": {
     "notification_duration": {
       "type": "number",
